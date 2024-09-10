@@ -3,24 +3,7 @@ mod encryptor;
 use anyhow::{bail, Ok, Result};
 use std::{fs::File, os::unix::fs::PermissionsExt, path::PathBuf};
 
-const HELP: &str = "\
-USAGE:
-  minichacha <SUBCOMMAND> <INPUT> [OPTIONS] [OUTPUT]
-
-FLAGS:
-  -h, --help            Prints help information
-
-OPTIONS:
-  --passphrase STRING   Encryption passphrase. Omit to read from STDIN
-  --output PATH         Specify output path. Omit to compute automatically
-
-SUBCOMMANDS:
-  encrypt               Encrypt the input
-  decrypt               Decrypt the input
-
-ARGS:
-  <INPUT>               Path to the input file
-";
+const HELP: &str = include_str!("../README.txt");
 
 enum Subcommand {
     Encrypt,
@@ -103,9 +86,10 @@ fn main() -> Result<()> {
         Ok,
     )?;
 
-    let passphrase = args
-        .passphrase
-        .map_or_else(|| Ok(rpassword::prompt_password("Input passphrase: ")?), Ok)?;
+    let passphrase = args.passphrase.map_or_else(
+        || Ok(rpassword::prompt_password("Input passphrase: ")?),
+        Ok,
+    )?;
 
     match args.subcmd {
         Subcommand::Encrypt => {
