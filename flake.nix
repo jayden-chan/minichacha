@@ -22,22 +22,22 @@
 
         craneLib = crane.mkLib pkgs;
 
-        commonArgs = {
-          src = craneLib.cleanCargoSource ./.;
-          strictDeps = true;
+        txtFilter = path: _type: builtins.match ".*txt$" path != null;
+        txtOrCargo = path: type: (txtFilter path type) || (craneLib.filterCargoSources path type);
 
-          buildInputs =
-            [ ]
-            ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-              pkgs.libiconv
-            ];
+        commonArgs = {
+          src = pkgs.lib.cleanSourceWith {
+            src = ./.;
+            filter = txtOrCargo;
+            name = "source";
+          };
+
+          strictDeps = true;
+          buildInputs = [ ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [ pkgs.libiconv ];
         };
 
         minichacha = craneLib.buildPackage (
-          commonArgs
-          // {
-            cargoArtifacts = craneLib.buildDepsOnly commonArgs;
-          }
+          commonArgs // { cargoArtifacts = craneLib.buildDepsOnly commonArgs; }
         );
       in
       {
@@ -47,9 +47,7 @@
 
         packages.default = minichacha;
 
-        apps.default = flake-utils.lib.mkApp {
-          drv = minichacha;
-        };
+        apps.default = flake-utils.lib.mkApp { drv = minichacha; };
 
         devShells.default = craneLib.devShell {
           checks = self.checks.${system};
